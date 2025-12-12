@@ -1,0 +1,5 @@
+{
+  "name": "SpatialReasoning-Lab",
+  "description": "A 3D rendering and testing platform for spatial reasoning experiments with LLMs. Features procedural object generation, rotation control, and direct Gemini API testing.",
+  "requestFramePermissions": []
+}
