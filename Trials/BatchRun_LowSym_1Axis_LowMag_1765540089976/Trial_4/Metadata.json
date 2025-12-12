@@ -1,0 +1,50 @@
+{
+  "trial_id": 1765540084919,
+  "timestamp": "2025-12-12T11:48:04.919Z",
+  "config": {
+    "shape": "LOW_SYMMETRY",
+    "complexity": "ONE_AXIS",
+    "magnitude": "LOW",
+    "image_quality": "AI_OPTIMIZED"
+  },
+  "reference": {
+    "shape": "LOW_SYMMETRY",
+    "rotation": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    }
+  },
+  "targets": [
+    {
+      "id": "A",
+      "is_correct": true,
+      "variant": 0,
+      "rotation_values_deg": {
+        "x": 0,
+        "y": -39,
+        "z": 0
+      }
+    },
+    {
+      "id": "B",
+      "is_correct": false,
+      "variant": 2,
+      "rotation_values_deg": {
+        "x": 0,
+        "y": 0,
+        "z": -63
+      }
+    },
+    {
+      "id": "C",
+      "is_correct": false,
+      "variant": 3,
+      "rotation_values_deg": {
+        "x": 0,
+        "y": -65,
+        "z": 0
+      }
+    }
+  ]
+}
