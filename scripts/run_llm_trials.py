@@ -337,7 +337,7 @@ def append_report(report_path: Path, runs: List[ModelRun], trials_root: Path, pr
     else:
         existing = "# LLM Trait Testing Results\n\n"
         existing += "This file is auto-appended by scripts/run_llm_trials.py.\n"
-        existing += "Columns: Trial | Condition | Correct Answer | Model Answer | Model Confidence | Notes\n\n"
+        existing += "Columns: Trial | Condition | Correct Answer | Model Answer | Model Confidence\n\n"
 
     sections: List[str] = [existing, f"## Run {timestamp}", f"- Trials root: {trials_root}", f"- Prompt: {prompt_note}", ""]
 
@@ -351,18 +351,15 @@ def append_report(report_path: Path, runs: List[ModelRun], trials_root: Path, pr
         if avg_conf is not None:
             sections.append(f"- Avg confidence (where provided): {avg_conf:.1f}")
         sections.append("")
-        sections.append("| Trial | Condition | Correct Answer | Model Answer | Model Confidence | Notes |")
-        sections.append("| --- | --- | --- | --- | --- | --- |")
+        sections.append("| Trial | Condition | Correct Answer | Model Answer | Model Confidence |")
+        sections.append("| --- | --- | --- | --- | --- |")
         for res in run.results:
             conf_str = f"{res.confidence:.1f}" if res.confidence is not None else "-"
-            note = res.error or res.reasoning
-            note = " ".join(str(note).split())  # collapse whitespace
-            note = note.replace("|", "\\|")
             condition = res.condition.replace("|", "\\|")
             trial_label = str(res.trial_label).replace("|", "\\|")
             sections.append(
                 f"| {trial_label} | {condition} | {res.gold} | "
-                f"{res.prediction or '-'} | {conf_str} | {note} |"
+                f"{res.prediction or '-'} | {conf_str} |"
             )
         sections.append("")
 
