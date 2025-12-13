@@ -15,6 +15,7 @@ import json
 import mimetypes
 import textwrap
 import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -289,13 +290,25 @@ class GeminiRunner:
         return parse_json_response(response.text)
 
 
-def run_trials(name: str, runner, trials: List[TrialAssets]) -> ModelRun:
+def call_with_timeout(func, timeout_seconds: Optional[int]) -> Any:
+    if timeout_seconds is None or timeout_seconds <= 0:
+        return func()
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(func)
+        try:
+            return future.result(timeout=timeout_seconds)
+        except FuturesTimeoutError:
+            future.cancel()
+            raise TimeoutError(f"LLM call exceeded {timeout_seconds} seconds")
+
+
+def run_trials(name: str, runner, trials: List[TrialAssets], timeout_seconds: Optional[int] = None) -> ModelRun:
     results: List[TrialResult] = []
     total = len(trials)
     for idx, trial in enumerate(trials, start=1):
         start = time.time()
         try:
-            raw = runner(trial)
+            raw = call_with_timeout(lambda: runner(trial), timeout_seconds)
             latency_ms = int((time.time() - start) * 1000)
             answer = normalize_answer(raw.get("answer"))
             confidence = normalize_confidence(raw.get("confidence"))
@@ -437,7 +450,7 @@ def main() -> None:
         runner = runners[name]
         model_id = getattr(runner, "model_id", name)
         print(f"- {name} ({model_id})...")
-        run_result = run_trials(name=name, runner=runner, trials=trials)
+        run_result = run_trials(name=name, runner=runner, trials=trials, timeout_seconds=timeout)
         runs.append(run_result)
 
     prompt_text = f"System prompt:\\n{SYSTEM_PROMPT}\\n\\nUser instruction:\\n{USER_INSTRUCTION}"
