@@ -1,0 +1,27 @@
+# Copy this file to scripts/llm_config.yaml and fill in your own API keys.
+# The real config file is git-ignored.
+
+trials_root: Trials
+report_path: report/trait_result.md
+max_trials: null        # Optional: stop after N trials (per model) for quick smoke tests
+temperature: 0.2
+timeout_seconds: 120
+
+models:
+  gpt5_2:
+    provider: openai          # Uses the OpenAI Python SDK
+    model: gpt-5.2            # Adjust if your account exposes a different suffix
+    api_key: "REPLACE_ME"
+    base_url: "https://api.openai.com/v1"
+
+  qwen:
+    provider: openai          # Qwen supports the OpenAI-compatible API
+    model: qwen-vl-plus       # Swap to qwen-vl-max / qwen2.5-vl-72b-instruct if desired
+    api_key: "REPLACE_ME"
+    base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    json_mode: true           # Set false if the endpoint rejects response_format
+
+  gemini:
+    provider: gemini          # Uses google-generativeai Python SDK
+    model: gemini-2.0-pro-exp-02-05
+    api_key: "REPLACE_ME"
