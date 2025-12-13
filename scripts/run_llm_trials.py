@@ -330,7 +330,7 @@ def run_trials(name: str, runner, trials: List[TrialAssets]) -> ModelRun:
     return ModelRun(name=name, model_id=getattr(runner, "model_id", name), results=results)
 
 
-def append_report(report_path: Path, runs: List[ModelRun], trials_root: Path, prompt_note: str) -> None:
+def append_report(report_path: Path, runs: List[ModelRun], trials_root: Path, prompt_text: str) -> None:
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if report_path.exists():
         existing = report_path.read_text(encoding="utf-8").rstrip()
@@ -339,7 +339,16 @@ def append_report(report_path: Path, runs: List[ModelRun], trials_root: Path, pr
         existing += "This file is auto-appended by scripts/run_llm_trials.py.\n"
         existing += "Columns: Trial | Condition | Correct Answer | Model Answer | Model Confidence\n\n"
 
-    sections: List[str] = [existing, f"## Run {timestamp}", f"- Trials root: {trials_root}", f"- Prompt: {prompt_note}", ""]
+    sections: List[str] = [
+        existing,
+        f"## Run {timestamp}",
+        f"- Trials root: {trials_root}",
+        "- Prompt:",
+        "```",
+        prompt_text.strip(),
+        "```",
+        "",
+    ]
 
     for run in runs:
         acc = run.accuracy()
@@ -424,8 +433,8 @@ def main() -> None:
         run_result = run_trials(name=name, runner=runner, trials=trials)
         runs.append(run_result)
 
-    prompt_note = "Mental rotation prompt (system + JSON answer/confidence/reasoning)"
-    append_report(report_path, runs, trials_root=trials_root, prompt_note=prompt_note)
+    prompt_text = f"System prompt:\\n{SYSTEM_PROMPT}\\n\\nUser instruction:\\n{USER_INSTRUCTION}"
+    append_report(report_path, runs, trials_root=trials_root, prompt_text=prompt_text)
     print(f"Results appended to {report_path}")
 
 
