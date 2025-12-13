@@ -291,7 +291,8 @@ class GeminiRunner:
 
 def run_trials(name: str, runner, trials: List[TrialAssets]) -> ModelRun:
     results: List[TrialResult] = []
-    for trial in trials:
+    total = len(trials)
+    for idx, trial in enumerate(trials, start=1):
         start = time.time()
         try:
             raw = runner(trial)
@@ -327,6 +328,12 @@ def run_trials(name: str, runner, trials: List[TrialAssets]) -> ModelRun:
                     error=str(exc),
                 )
             )
+        if total:
+            filled = int(30 * idx / total)
+            bar = f"[{'=' * filled}{'.' * (30 - filled)}] {idx}/{total}"
+            print(f"\r    {bar}", end="", flush=True)
+    if total:
+        print()
     return ModelRun(name=name, model_id=getattr(runner, "model_id", name), results=results)
 
 
