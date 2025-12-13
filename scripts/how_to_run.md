@@ -34,9 +34,9 @@ python scripts\run_llm_trials.py --max-trials 5
 ```
 - 指定输出文件或配置文件：
 ```powershell
-python scripts\run_llm_trials.py --config scripts\llm_config.yaml --report report\trait_result.md
+python scripts\run_llm_trials.py --config scripts\llm_config.yaml --report report\trials_result.md
 ```
 
 ## 4) 查看结果
-- 脚本会把每次运行的汇总和逐试次结果追加到 `report/trait_result.md`。  
+- 脚本会把每次运行的汇总和逐试次结果追加到 `report/trials_result.md`。  
 - 每个模型都在独立会话中回答，避免上下文干扰；表格里可查看正确率、置信度和错误信息。

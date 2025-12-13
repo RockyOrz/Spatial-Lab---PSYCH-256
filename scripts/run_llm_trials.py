@@ -4,7 +4,7 @@ Run the mental-rotation trials against GPT-5.2, Qwen, and Gemini.
 
 - Reads API credentials from llm_config.yaml (see llm_config.example.yaml).
 - Sends each trial as an isolated conversation to avoid context carryover.
-- Appends results to report/trait_result.md.
+- Appends results to report/trials_result.md.
 """
 
 from __future__ import annotations
@@ -398,7 +398,7 @@ def main() -> None:
 
     cfg = load_yaml_config(Path(args.config))
     trials_root = Path(cfg.get("trials_root", "Trials"))
-    report_path = Path(args.report or cfg.get("report_path", "report/trait_result.md"))
+    report_path = Path(args.report or cfg.get("report_path", "report/trials_result.md"))
     cfg_max_trials = cfg.get("max_trials")
     max_trials = args.max_trials if args.max_trials is not None else (
         int(cfg_max_trials) if cfg_max_trials is not None else None

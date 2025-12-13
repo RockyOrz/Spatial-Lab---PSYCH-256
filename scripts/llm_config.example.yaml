@@ -2,7 +2,7 @@
 # The real config file is git-ignored.
 
 trials_root: Trials
-report_path: report/trait_result.md
+report_path: report/trials_result.md
 max_trials: null        # Optional: stop after N trials (per model) for quick smoke tests
 temperature: 0.2
 timeout_seconds: 120
