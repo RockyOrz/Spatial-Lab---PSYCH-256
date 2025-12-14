@@ -4,8 +4,8 @@
 trials_root: Trials
 report_path: report/trials_result.md
 max_trials: null        # Optional: stop after N trials (per model) for quick smoke tests
-temperature: 0.2
-timeout_seconds: 120
+temperature: 1.0
+timeout_seconds: 1000
 
 models:
   gpt5_2:
@@ -25,3 +25,10 @@ models:
     provider: gemini          # Uses google-generativeai Python SDK
     model: gemini-2.0-pro-exp-02-05
     api_key: "REPLACE_ME"
+
+  deepseek:
+    provider: deepseek        # Uses OpenAI-compatible DeepSeek API
+    model: deepseek-vl2       # Pick a vision-capable DeepSeek model
+    api_key: "REPLACE_ME"
+    base_url: "https://api.deepseek.com"
+    json_mode: true           # Set false if the endpoint rejects response_format

@@ -15,7 +15,7 @@ python -m pip install --user -r scripts/requirements.txt
 ```powershell
 copy scripts\llm_config.example.yaml scripts\llm_config.yaml
 ```
-2. 编辑 `scripts/llm_config.yaml`，填入你的 `api_key`（GPT-5.2 / Qwen / Gemini）。  
+2. 编辑 `scripts/llm_config.yaml`，填入你的 `api_key`（GPT-5.2 / Qwen / Gemini / DeepSeek）。  
    - 该文件已在 `.gitignore` 中，不会被提交；但仍请不要把密钥泄露到公共场所。
 3. 如需只跑部分模型，保留相应的模型配置即可。
 

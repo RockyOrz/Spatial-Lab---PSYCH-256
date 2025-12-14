@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Run the mental-rotation trials against GPT-5.2, Qwen, and Gemini.
+Run the mental-rotation trials against GPT-5.2, Qwen, Gemini, and DeepSeek.
 
 - Reads API credentials from llm_config.yaml (see llm_config.example.yaml).
 - Sends each trial as an isolated conversation to avoid context carryover.
@@ -199,6 +199,66 @@ def build_openai_content(trial: TrialAssets) -> List[Dict[str, Any]]:
     return parts
 
 
+def build_deepseek_content(trial: TrialAssets) -> List[Dict[str, Any]]:
+    parts: List[Dict[str, Any]] = [
+        {"type": "text", "text": "Reference Object - View 1 (Front):"},
+        {"type": "image_url", "image_url": {"url": data_url(*trial.ref_front)}},
+        {"type": "text", "text": "Reference Object - View 2 (Back - 180 degrees):"},
+        {"type": "image_url", "image_url": {"url": data_url(*trial.ref_back)}},
+        {"type": "text", "text": "--- CANDIDATES ---"},
+    ]
+    for letter in ["A", "B", "C"]:
+        parts.append({"type": "text", "text": f"Candidate {letter}:"})
+        parts.append({"type": "image_url", "image_url": {"url": data_url(*trial.candidates[letter])}})
+    parts.append({"type": "text", "text": USER_INSTRUCTION})
+    return parts
+
+
+def build_deepseek_fallback_content(trial: TrialAssets) -> List[Dict[str, Any]]:
+    parts: List[Dict[str, Any]] = [
+        {"type": "text", "text": "Reference Object - View 1 (Front):"},
+        {"type": "image_url", "image_url": data_url(*trial.ref_front)},
+        {"type": "text", "text": "Reference Object - View 2 (Back - 180 degrees):"},
+        {"type": "image_url", "image_url": data_url(*trial.ref_back)},
+        {"type": "text", "text": "--- CANDIDATES ---"},
+    ]
+    for letter in ["A", "B", "C"]:
+        parts.append({"type": "text", "text": f"Candidate {letter}:"})
+        parts.append({"type": "image_url", "image_url": data_url(*trial.candidates[letter])})
+    parts.append({"type": "text", "text": USER_INSTRUCTION})
+    return parts
+
+
+def build_deepseek_image_type_content(trial: TrialAssets) -> List[Dict[str, Any]]:
+    parts: List[Dict[str, Any]] = [
+        {"type": "text", "text": "Reference Object - View 1 (Front):"},
+        {"type": "image", "image_url": data_url(*trial.ref_front)},
+        {"type": "text", "text": "Reference Object - View 2 (Back - 180 degrees):"},
+        {"type": "image", "image_url": data_url(*trial.ref_back)},
+        {"type": "text", "text": "--- CANDIDATES ---"},
+    ]
+    for letter in ["A", "B", "C"]:
+        parts.append({"type": "text", "text": f"Candidate {letter}:"})
+        parts.append({"type": "image", "image_url": data_url(*trial.candidates[letter])})
+    parts.append({"type": "text", "text": USER_INSTRUCTION})
+    return parts
+
+
+def build_deepseek_markdown_content(trial: TrialAssets) -> str:
+    lines = [
+        "Reference Object - View 1 (Front):",
+        f"![ref_front]({data_url(*trial.ref_front)})",
+        "Reference Object - View 2 (Back - 180 degrees):",
+        f"![ref_back]({data_url(*trial.ref_back)})",
+        "--- CANDIDATES ---",
+    ]
+    for letter in ["A", "B", "C"]:
+        lines.append(f"Candidate {letter}:")
+        lines.append(f"![cand_{letter.lower()}]({data_url(*trial.candidates[letter])})")
+    lines.append(USER_INSTRUCTION)
+    return "\n".join(lines)
+
+
 class OpenAIStyleRunner:
     def __init__(
         self,
@@ -243,6 +303,99 @@ class OpenAIStyleRunner:
                 raise
         message = response.choices[0].message.content
         return parse_json_response(message)
+
+
+class DeepSeekRunner:
+    def __init__(
+        self,
+        model_id: str,
+        api_key: str,
+        base_url: Optional[str],
+        temperature: float,
+        timeout: int,
+        json_mode: bool = True,
+    ):
+        try:
+            from openai import OpenAI
+        except ImportError as exc:
+            raise ImportError("openai package is required. pip install -r scripts/requirements.txt") from exc
+
+        self.client = OpenAI(api_key=api_key, base_url=(base_url or "https://api.deepseek.com").rstrip("/"))
+        self.model_id = model_id
+        self.temperature = temperature
+        self.timeout = timeout
+        self.json_mode = json_mode
+
+    def __call__(self, trial: TrialAssets) -> Dict[str, Any]:
+        errors: List[str] = []
+
+        def invoke_chat(content_parts: Any) -> Dict[str, Any]:
+            params: Dict[str, Any] = dict(
+                model=self.model_id,
+                messages=[
+                    {"role": "system", "content": [{"type": "text", "text": SYSTEM_PROMPT}]},
+                    {"role": "user", "content": content_parts},
+                ],
+                temperature=self.temperature,
+                timeout=self.timeout,
+            )
+            if self.json_mode:
+                params["response_format"] = {"type": "json_object"}
+            try:
+                response = self.client.chat.completions.create(**params)
+            except Exception:
+                if self.json_mode:
+                    params.pop("response_format", None)
+                    response = self.client.chat.completions.create(**params)
+                else:
+                    raise
+            message = response.choices[0].message.content
+            return parse_json_response(message)
+
+        def invoke_chat_text(prompt: str) -> Dict[str, Any]:
+            params: Dict[str, Any] = dict(
+                model=self.model_id,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=self.temperature,
+                timeout=self.timeout,
+            )
+            if self.json_mode:
+                params["response_format"] = {"type": "json_object"}
+            try:
+                response = self.client.chat.completions.create(**params)
+            except Exception:
+                if self.json_mode:
+                    params.pop("response_format", None)
+                    response = self.client.chat.completions.create(**params)
+                else:
+                    raise
+            message = response.choices[0].message.content
+            return parse_json_response(message)
+
+        # Try pure-text (markdown data URLs) first to satisfy APIs that only accept string content.
+        try:
+            return invoke_chat_text(build_deepseek_markdown_content(trial))
+        except Exception as exc:
+            errors.append(str(exc))
+
+        # Then try structured content variants.
+        builders = (
+            build_deepseek_content,
+            build_deepseek_fallback_content,
+            build_deepseek_image_type_content,
+        )
+
+        for builder in builders:
+            try:
+                return invoke_chat(builder(trial))
+            except Exception as exc:
+                errors.append(str(exc))
+                continue
+
+        raise RuntimeError(f"DeepSeek call failed after multiple formats: {' | '.join(errors)}")
 
 
 class GeminiRunner:
@@ -341,6 +494,7 @@ def run_trials(name: str, runner, trials: List[TrialAssets], timeout_seconds: Op
                     error=str(exc),
                 )
             )
+            print(f"\n[ERROR] {name} | {trial.label} | {exc}", flush=True)
         if total:
             filled = int(30 * idx / total)
             bar = f"[{'=' * filled}{'.' * (30 - filled)}] {idx}/{total}"
@@ -405,11 +559,21 @@ def build_runners(config: Dict[str, Any], temperature: float, timeout: int) -> D
         json_mode = info.get("json_mode", True)
         if not api_key or not model_id or not provider:
             raise ValueError(f"Model entry '{name}' is missing provider/model/api_key")
-        if provider.lower() == "openai":
+        provider_lower = provider.lower()
+        if provider_lower == "openai":
             runners[name] = OpenAIStyleRunner(
                 model_id, api_key, base_url, temperature, timeout, json_mode=json_mode
             )
-        elif provider.lower() == "gemini":
+        elif provider_lower == "deepseek":
+            runners[name] = DeepSeekRunner(
+                model_id,
+                api_key,
+                base_url,
+                temperature,
+                timeout,
+                json_mode=json_mode,
+            )
+        elif provider_lower == "gemini":
             runners[name] = GeminiRunner(model_id, api_key, temperature, timeout)
         else:
             raise ValueError(f"Unsupported provider '{provider}' for model '{name}'")
